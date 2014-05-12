@@ -51,7 +51,10 @@ public interface CouchbaseNode extends SoftwareProcess {
 
     AttributeSensor<Boolean> IS_PRIMARY_NODE = Sensors.newBooleanSensor("couchbase.isPrimaryNode", "flag to determine if the current couchbase node is the primary node for the cluster");
     AttributeSensor<Boolean> IS_IN_CLUSTER = Sensors.newBooleanSensor("couchbase.isInCluster", "flag to determine if the current couchbase node has been added to a cluster");
-    public static final AttributeSensor<String> COUCHBASE_WEB_ADMIN_URL = WebAppServiceConstants.ROOT_URL; // By using this specific sensor, the value will be shown in the summary tab
+    AttributeSensor<String> COUCHBASE_WEB_ADMIN_URL = WebAppServiceConstants.ROOT_URL; // By using this specific sensor, the value will be shown in the summary tab
+    
+    AttributeSensor<Boolean> RUNNING = Sensors.newBooleanSensor("couchbase.running", "Indicates that the node is running, "
+            + "and can be added to a cluster, but is not necessarity available for client use (i.e. if it has not been added to a cluster)");
     
     // this class is added because the ROOT_URL relies on a static initialization which unfortunately
     // can't be added to

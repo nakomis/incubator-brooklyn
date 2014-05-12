@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import brooklyn.entity.basic.Attributes;
 import brooklyn.entity.basic.SoftwareProcessImpl;
 import brooklyn.event.SensorEvent;
 import brooklyn.event.SensorEventListener;
@@ -31,7 +30,7 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
     public void init() {
         super.init();
         
-        subscribe(this, Attributes.SERVICE_UP, new SensorEventListener<Boolean>() {
+        subscribe(this, RUNNING, new SensorEventListener<Boolean>() {
             @Override
             public void onEvent(SensorEvent<Boolean> booleanSensorEvent) {
                 if (Boolean.TRUE.equals(booleanSensorEvent.getValue())) {
