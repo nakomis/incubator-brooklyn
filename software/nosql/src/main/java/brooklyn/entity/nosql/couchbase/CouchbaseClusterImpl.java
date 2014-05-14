@@ -18,14 +18,16 @@ import brooklyn.entity.group.AbstractMembershipTrackingPolicy;
 import brooklyn.entity.group.DynamicClusterImpl;
 import brooklyn.entity.proxying.EntitySpec;
 import brooklyn.entity.trait.Startable;
+import brooklyn.event.Sensor;
 import brooklyn.event.SensorEvent;
 import brooklyn.event.SensorEventListener;
 import brooklyn.location.Location;
-import brooklyn.util.collections.MutableMap;
 import brooklyn.util.collections.MutableSet;
 import brooklyn.util.time.Time;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 public class CouchbaseClusterImpl extends DynamicClusterImpl implements CouchbaseCluster {
@@ -33,21 +35,40 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
     private final Object mutex = new Object[0];
 
     public void init() {
-        log.info("Initializing the Couchbase cluster...");
         super.init();
+       
+        Map<String, String> flags = ImmutableMap.of("name", "Controller targets tracker");
+        
+        AbstractMembershipTrackingPolicy serverPoolMemberTrackerPolicy = new AbstractMembershipTrackingPolicy(flags) {
+            protected void onEntityChange(Entity member) {
+                onServerPoolMemberChanged(member);
+            }
+            protected void onEntityAdded(Entity member) {
+                onServerPoolMemberChanged(member);
+            }
+            protected void onEntityRemoved(Entity member) {
+                onServerPoolMemberChanged(member);
+            }
+        };
+        
+        serverPoolMemberTrackerPolicy.setConfig(AbstractMembershipTrackingPolicy.NOTIFY_ON_DUPLICATES, false);
+        serverPoolMemberTrackerPolicy.setConfig(AbstractMembershipTrackingPolicy.SENSORS_TO_TRACK, 
+                ImmutableSet.<Sensor<?>>of(CouchbaseNode.RUNNING, Attributes.SERVICE_UP));
+        
+        addPolicy(serverPoolMemberTrackerPolicy);
+        serverPoolMemberTrackerPolicy.setGroup(this);
     }
 
     @Override
     public void start(Collection<? extends Location> locations) {
         super.start(locations);
-
+        
         connectSensors();
-        connectEnrichers();
 
         //start timeout before adding the servers
         Time.sleep(getConfig(SERVICE_UP_TIME_OUT));
 
-        Optional<Set<Entity>> upNodes = Optional.<Set<Entity>>fromNullable(getAttribute(COUCHBASE_CLUSTER_UP_NODES));
+        Optional<Set<CouchbaseNode>> upNodes = Optional.<Set<CouchbaseNode>>fromNullable(getAttribute(COUCHBASE_CLUSTER_UP_NODES));
         if (upNodes.isPresent() && !upNodes.get().isEmpty()) {
 
             //TODO: select a new primary node if this one fails
@@ -75,7 +96,6 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
         } else {
             setAttribute(SERVICE_STATE, Lifecycle.ON_FIRE);
         }
-
     }
 
     @Override
@@ -83,38 +103,13 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
         super.stop();
     }
 
-    public void connectEnrichers() {
-
+    public void connectSensors() {
         subscribeToMembers(this, SERVICE_UP, new SensorEventListener<Boolean>() {
             @Override
             public void onEvent(SensorEvent<Boolean> event) {
                 setAttribute(SERVICE_UP, calculateServiceUp());
             }
         });
-    }
-
-    protected void connectSensors() {
-        Map<String, Object> flags = MutableMap.<String, Object>builder()
-                .put("name", "Controller targets tracker")
-                .build();
-
-        AbstractMembershipTrackingPolicy serverPoolMemberTrackerPolicy = new AbstractMembershipTrackingPolicy(flags) {
-            protected void onEntityChange(Entity member) {
-                onServerPoolMemberChanged(member);
-            }
-
-            protected void onEntityAdded(Entity member) {
-                onServerPoolMemberChanged(member);
-            }
-
-            protected void onEntityRemoved(Entity member) {
-                onServerPoolMemberChanged(member);
-            }
-        };
-
-        addPolicy(serverPoolMemberTrackerPolicy);
-        serverPoolMemberTrackerPolicy.setGroup(this);
-
     }
 
     protected synchronized void onServerPoolMemberChanged(Entity member) {
@@ -125,12 +120,12 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
         synchronized (mutex) {
             if (belongsInServerPool(member)) {
 
-                Optional<Set<Entity>> upNodes = Optional.fromNullable(getUpNodes());
+                Optional<Set<CouchbaseNode>> upNodes = Optional.fromNullable(getUpNodes());
                 if (upNodes.isPresent()) {
 
                     if (!upNodes.get().contains(member)) {
-                        Set<Entity> newNodes = Sets.newHashSet(getUpNodes());
-                        newNodes.add(member);
+                        Set<CouchbaseNode> newNodes = Sets.newHashSet(getUpNodes());
+                        newNodes.add((CouchbaseNode)member);
                         setAttribute(COUCHBASE_CLUSTER_UP_NODES, newNodes);
 
                         //add to set of servers to be added.
@@ -141,8 +136,8 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
                         log.warn("Node already in cluster up nodes {}: {};", this, member);
                     }
                 } else {
-                    Set<Entity> newNodes = Sets.newHashSet();
-                    newNodes.add(member);
+                    Set<CouchbaseNode> newNodes = Sets.newHashSet();
+                    newNodes.add((CouchbaseNode)member);
                     setAttribute(COUCHBASE_CLUSTER_UP_NODES, newNodes);
 
                     if (isClusterInitialized()) {
@@ -150,7 +145,7 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
                     }
                 }
             } else {
-                Set<Entity> upNodes = getUpNodes();
+                Set<CouchbaseNode> upNodes = getUpNodes();
                 if (upNodes != null && upNodes.contains(member)) {
                     upNodes.remove(member);
                     setAttribute(COUCHBASE_CLUSTER_UP_NODES, upNodes);
@@ -197,7 +192,7 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
         return Optional.fromNullable(getAttribute(CouchbaseCluster.ACTUAL_CLUSTER_SIZE)).or(-1);
     }
 
-    private Set<Entity> getUpNodes() {
+    private Set<CouchbaseNode> getUpNodes() {
         return getAttribute(COUCHBASE_CLUSTER_UP_NODES);
     }
 
@@ -208,7 +203,7 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
     @Override
     protected boolean calculateServiceUp() {
         if (!super.calculateServiceUp()) return false;
-        Set<Entity> upNodes = getAttribute(COUCHBASE_CLUSTER_UP_NODES);
+        Set<CouchbaseNode> upNodes = getAttribute(COUCHBASE_CLUSTER_UP_NODES);
         if (upNodes == null || upNodes.isEmpty() || upNodes.size() < getQuorumSize()) return false;
         return true;
     }
@@ -219,15 +214,7 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
 
         if (!serversToAdd.isEmpty()) {
             for (Entity e : serversToAdd) {
-                if (!isMemberInCluster(e)) {
-                    String hostname = e.getAttribute(Attributes.HOSTNAME) + ":" + e.getConfig(CouchbaseNode.COUCHBASE_WEB_ADMIN_PORT).iterator().next();
-                    String username = e.getConfig(CouchbaseNode.COUCHBASE_ADMIN_USERNAME);
-                    String password = e.getConfig(CouchbaseNode.COUCHBASE_ADMIN_PASSWORD);
-
-                    Entities.invokeEffectorWithArgs(this, getPrimaryNode(), CouchbaseNode.SERVER_ADD, hostname, username, password);
-                    //FIXME check feedback of whether the server was added.
-                    ((EntityInternal) e).setAttribute(CouchbaseNode.IS_IN_CLUSTER, true);
-                }
+                addServer(e);
             }
         } else {
             log.warn("no servers to be added on the cluster: {}", this);
@@ -235,7 +222,6 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
     }
 
     protected void addServer(Entity serverToAdd) {
-
         if (!isMemberInCluster(serverToAdd)) {
             String hostname = serverToAdd.getAttribute(Attributes.HOSTNAME) + ":" + serverToAdd.getConfig(CouchbaseNode.COUCHBASE_WEB_ADMIN_PORT).iterator().next();
             String username = serverToAdd.getConfig(CouchbaseNode.COUCHBASE_ADMIN_USERNAME);

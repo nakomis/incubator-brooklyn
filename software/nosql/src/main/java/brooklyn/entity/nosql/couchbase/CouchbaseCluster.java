@@ -21,12 +21,16 @@ public interface CouchbaseCluster extends DynamicCluster {
     AttributeSensor<Integer> ACTUAL_CLUSTER_SIZE = Sensors.newIntegerSensor("coucbase.cluster.actualClusterSize", "returns the actual number of nodes in the cluster");
 
     @SuppressWarnings("serial")
-    AttributeSensor<Set<Entity>> COUCHBASE_CLUSTER_UP_NODES = Sensors.newSensor(new TypeToken<Set<Entity>>() {
-    }, "couchbase.cluster.clusterEntities", "the set of service up nodes");
+    AttributeSensor<Set<CouchbaseNode>> COUCHBASE_CLUSTER_UP_NODES = Sensors.newSensor(new TypeToken<Set<CouchbaseNode>>() {}, 
+            "couchbase.cluster.clusterEntities", "the set of service up nodes");
+    
+    @SuppressWarnings("serial")
+    AttributeSensor<Set<CouchbaseNode>> COUCHBASE_CLUSTER_RUNNING_NODES = Sensors.newSensor(new TypeToken<Set<CouchbaseNode>>() {}, 
+            "couchbase.cluster.runningEntities", "all running nodes, including nodes that have not yet been added to the cluster");
 
     @SuppressWarnings("serial")
-    AttributeSensor<List<String>> COUCHBASE_CLUSTER_BUCKETS = Sensors.newSensor(new TypeToken<List<String>>() {
-    }, "couchbase.cluster.buckets", "Names of all the buckets the couchbase cluster");
+    AttributeSensor<List<String>> COUCHBASE_CLUSTER_BUCKETS = Sensors.newSensor(new TypeToken<List<String>>() {}, 
+            "couchbase.cluster.buckets", "Names of all the buckets the couchbase cluster");
 
     AttributeSensor<Entity> COUCHBASE_PRIMARY_NODE = Sensors.newSensor(Entity.class, "couchbase.cluster.primaryNode", "The primary couchbase node to query and issue add-server and rebalance on");
 
