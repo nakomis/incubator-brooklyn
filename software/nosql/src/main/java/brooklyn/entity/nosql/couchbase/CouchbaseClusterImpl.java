@@ -22,11 +22,11 @@ import brooklyn.event.Sensor;
 import brooklyn.event.SensorEvent;
 import brooklyn.event.SensorEventListener;
 import brooklyn.location.Location;
+import brooklyn.util.collections.MutableMap;
 import brooklyn.util.collections.MutableSet;
 import brooklyn.util.time.Time;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -37,7 +37,7 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
     public void init() {
         super.init();
        
-        Map<String, String> flags = ImmutableMap.of("name", "Controller targets tracker");
+        Map<String, String> flags = MutableMap.of("name", "Controller targets tracker");
         
         AbstractMembershipTrackingPolicy serverPoolMemberTrackerPolicy = new AbstractMembershipTrackingPolicy(flags) {
             protected void onEntityChange(Entity member) {
@@ -53,7 +53,7 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
         
         serverPoolMemberTrackerPolicy.setConfig(AbstractMembershipTrackingPolicy.NOTIFY_ON_DUPLICATES, false);
         serverPoolMemberTrackerPolicy.setConfig(AbstractMembershipTrackingPolicy.SENSORS_TO_TRACK, 
-                ImmutableSet.<Sensor<?>>of(CouchbaseNode.RUNNING, Attributes.SERVICE_UP));
+                ImmutableSet.<Sensor<?>>of(CouchbaseNode.HTTP_SERVER_RUNNING, Attributes.SERVICE_UP));
         
         addPolicy(serverPoolMemberTrackerPolicy);
         serverPoolMemberTrackerPolicy.setGroup(this);
@@ -175,10 +175,11 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
 
     protected EntitySpec<?> getMemberSpec() {
         EntitySpec<?> result = super.getMemberSpec();
-        if (result != null) return result;
-        return EntitySpec.create(CouchbaseNode.class);
+        if (result == null) { 
+            return EntitySpec.create(CouchbaseNode.class);
+        }
+        return result.configure(CouchbaseNode.REQUIRES_CLUSTER, true);
     }
-
 
     protected int getQuorumSize() {
         Integer quorumSize = getConfig(CouchbaseCluster.INITIAL_QUORUM_SIZE);

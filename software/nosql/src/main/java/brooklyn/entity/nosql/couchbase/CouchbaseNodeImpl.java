@@ -6,15 +6,28 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import brooklyn.enricher.Enrichers;
 import brooklyn.entity.basic.SoftwareProcessImpl;
 import brooklyn.event.SensorEvent;
 import brooklyn.event.SensorEventListener;
+import brooklyn.event.feed.http.HttpFeed;
+import brooklyn.event.feed.http.HttpPollConfig;
+import brooklyn.event.feed.http.HttpValueFunctions;
 import brooklyn.location.MachineProvisioningLocation;
+import brooklyn.location.access.BrooklynAccessUtils;
 import brooklyn.location.cloud.CloudLocationConfig;
 import brooklyn.util.collections.MutableSet;
 import brooklyn.util.config.ConfigBag;
 
+import com.google.common.base.Functions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.net.HostAndPort;
+
 public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseNode {
+    
+    private volatile HttpFeed httpRunningFeed;
+    private volatile HttpFeed httpInitializedFeed;
+    private volatile HttpFeed httpServiceUpFeed;
 
     @Override
     public Class<CouchbaseNodeDriver> getDriverInterface() {
@@ -30,16 +43,18 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
     public void init() {
         super.init();
         
-        subscribe(this, RUNNING, new SensorEventListener<Boolean>() {
+        subscribe(this, HTTP_SERVER_RUNNING, new SensorEventListener<Boolean>() {
             @Override
             public void onEvent(SensorEvent<Boolean> booleanSensorEvent) {
-                if (Boolean.TRUE.equals(booleanSensorEvent.getValue())) {
+                if (Boolean.TRUE.equals(booleanSensorEvent.getValue()) && !getAttribute(SERVER_INITIALIZED)) {
                     String hostname = getAttribute(HOSTNAME);
                     String webPort = getConfig(CouchbaseNode.COUCHBASE_WEB_ADMIN_PORT).iterator().next().toString();
                     setAttribute(CouchbaseNode.COUCHBASE_WEB_ADMIN_URL, format("http://%s:%s", hostname, webPort));
+                    getDriver().initializeForCluster();
                 }
             }
         });
+
     }
 
     protected Map<String, Object> obtainProvisioningFlags(@SuppressWarnings("rawtypes") MachineProvisioningLocation location) {
@@ -75,13 +90,64 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
 
     public void connectSensors() {
         super.connectSensors();
+        HostAndPort hostAndPort = BrooklynAccessUtils.getBrooklynAccessibleAddress(this,
+                getAttribute(COUCHBASE_WEB_ADMIN_PORT));
+        String managementUri = String.format("http://%s:%s",
+                hostAndPort.getHostText(), hostAndPort.getPort());
+        setAttribute(COUCHBASE_WEB_ADMIN_URL, managementUri);
+        httpRunningFeed = HttpFeed.builder()
+                .entity(this)
+                .period(1000)
+                .baseUri(managementUri)
+                .credentials(getConfig(COUCHBASE_ADMIN_USERNAME), getConfig(COUCHBASE_ADMIN_PASSWORD))
+                .poll(new HttpPollConfig<Boolean>(HTTP_SERVER_RUNNING)
+                        .onSuccess(HttpValueFunctions.responseCodeEquals(200))
+                        .onFailureOrException(Functions.constant(false)))
+                .build();
+        httpInitializedFeed = HttpFeed.builder()
+                .entity(this)
+                .period(1000)
+                .baseUri(managementUri + "/pools/nodes")
+                .credentials(getConfig(COUCHBASE_ADMIN_USERNAME), getConfig(COUCHBASE_ADMIN_PASSWORD))
+                .poll(new HttpPollConfig<Boolean>(SERVER_INITIALIZED)
+                        .onSuccess(HttpValueFunctions.responseCodeEquals(200))
+                        .onFailureOrException(Functions.constant(false)))
+                .build();
         connectServiceUpIsRunning();
+    }
+    
+    @Override
+    protected void connectServiceUpIsRunning() {
+        if (getConfig(REQUIRES_CLUSTER)) {
+            httpServiceUpFeed = HttpFeed.builder()
+                    .build();
+        } else {
+            addEnricher(
+                Enrichers.builder()
+                    .propagating(ImmutableMap.of(SERVER_INITIALIZED, SERVICE_UP))
+                    .build()
+            );
+        }
     }
 
     public void disconnectSensors() {
         super.disconnectSensors();
+        
+        if (httpRunningFeed != null) {
+            httpRunningFeed.stop();
+        }
+        
+        if (httpInitializedFeed != null) {
+            httpInitializedFeed.stop();
+        }
+        
         disconnectServiceUpIsRunning();
     }
 
-
+    @Override
+    protected void disconnectServiceUpIsRunning() {
+        if (httpServiceUpFeed != null) {
+            httpServiceUpFeed.stop();
+        }
+    }
 }

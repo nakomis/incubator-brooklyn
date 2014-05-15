@@ -1,7 +1,6 @@
 package brooklyn.entity.nosql.couchbase;
 
 import brooklyn.config.ConfigKey;
-import brooklyn.config.render.RendererHints;
 import brooklyn.entity.annotation.Effector;
 import brooklyn.entity.annotation.EffectorParam;
 import brooklyn.entity.basic.ConfigKeys;
@@ -27,6 +26,10 @@ public interface CouchbaseNode extends SoftwareProcess {
     @SetFromFlag("version")
     ConfigKey<String> SUGGESTED_VERSION = ConfigKeys.newConfigKeyWithDefault(SoftwareProcess.SUGGESTED_VERSION,
             "2.5.1");
+    
+    ConfigKey<Boolean> REQUIRES_CLUSTER = ConfigKeys.newBooleanConfigKey("couchbase.requiresCluster", 
+            "indicates that the server should not be accessed until it has been added to a cluster. "
+            + "This value is set in CouchbaseClusterImpl.getMemberSpec() and should not be set elsewhere", false);
 
     @SetFromFlag("downloadUrl")
     BasicAttributeSensorAndConfigKey<String> DOWNLOAD_URL = new BasicAttributeSensorAndConfigKey<String>(
@@ -53,20 +56,13 @@ public interface CouchbaseNode extends SoftwareProcess {
     AttributeSensor<Boolean> IS_IN_CLUSTER = Sensors.newBooleanSensor("couchbase.isInCluster", "flag to determine if the current couchbase node has been added to a cluster");
     AttributeSensor<String> COUCHBASE_WEB_ADMIN_URL = WebAppServiceConstants.ROOT_URL; // By using this specific sensor, the value will be shown in the summary tab
     
-    AttributeSensor<Boolean> RUNNING = Sensors.newBooleanSensor("couchbase.running", "Indicates that the node is running, "
-            + "and can be added to a cluster, but is not necessarity available for client use (i.e. if it has not been added to a cluster)");
+    AttributeSensor<Boolean> HTTP_SERVER_RUNNING = Sensors.newBooleanSensor("couchbase.http.running", "Indicates that the node is running, "
+            + "and can be initialized and added to a cluster, but is not necessarily available for client use (i.e. it has not "
+            + "yet been initialized with cluster-init and/or it has not been added to a cluster)");
     
-    // this class is added because the ROOT_URL relies on a static initialization which unfortunately
-    // can't be added to
-    // an interface.
-    class RootUrl {
-        public static final AttributeSensor<String> ROOT_URL = Sensors.newStringSensor("webapp.url", "URL");
-
-        static {
-            RendererHints.register(ROOT_URL, new RendererHints.NamedActionWithUrl("Open"));
-            RendererHints.register(COUCHBASE_WEB_ADMIN_URL, new RendererHints.NamedActionWithUrl("Open"));
-        }
-    }
+    AttributeSensor<Boolean> SERVER_INITIALIZED = Sensors.newBooleanSensor("couchbase.server.initialized", "Indicates that the node is running, "
+            + "and has been initialized with cluster-init, but is not necessarily available for client use (i.e. it has not "
+            + "yet been added to a cluster)");
 
     public static final MethodEffector<Void> SERVER_ADD = new MethodEffector<Void>(CouchbaseNode.class, "serverAdd");
     public static final MethodEffector<Void> REBALANCE = new MethodEffector<Void>(CouchbaseNode.class, "rebalance");

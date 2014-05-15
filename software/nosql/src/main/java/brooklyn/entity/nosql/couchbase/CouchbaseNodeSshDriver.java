@@ -7,6 +7,7 @@ import static brooklyn.util.ssh.BashCommands.sudo;
 import static java.lang.String.format;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import brooklyn.entity.basic.AbstractSoftwareProcessSshDriver;
 import brooklyn.entity.basic.Entities;
@@ -14,12 +15,12 @@ import brooklyn.entity.drivers.downloads.DownloadResolver;
 import brooklyn.location.OsDetails;
 import brooklyn.location.basic.SshMachineLocation;
 import brooklyn.util.ssh.BashCommands;
-import brooklyn.util.time.Duration;
-import brooklyn.util.time.Time;
 
 import com.google.common.collect.ImmutableList;
 
 public class CouchbaseNodeSshDriver extends AbstractSoftwareProcessSshDriver implements CouchbaseNodeDriver {
+    
+    private AtomicBoolean clusterInitCalled = new AtomicBoolean(false);
 
     public CouchbaseNodeSshDriver(final CouchbaseNodeImpl entity, final SshMachineLocation machine) {
         super(entity, machine);
@@ -88,17 +89,25 @@ public class CouchbaseNodeSshDriver extends AbstractSoftwareProcessSshDriver imp
 
     @Override
     public void launch() {
-        //FIXME needs time for http server to initialize
-        Time.sleep(Duration.TEN_SECONDS);
+        // no-op
+    }
+    
+    @Override
+    public void initializeForCluster() {
+        if (clusterInitCalled.getAndSet(true)) {
+            // Prevents duplicate call to cluster-init during cluster initalization
+            // once initialization is complete, the SERVER_INITIALIZED attribute will be set
+            return;
+        }
         newScript(LAUNCHING)
-                .body.append(
+        .body.append(
                 sudo("/etc/init.d/couchbase-server start"),
                 couchbaseCli("cluster-init") +
-                        getCouchbaseHostnameAndPort() +
-                        " --cluster-init-username=" + getUsername() +
-                        " --cluster-init-password=" + getPassword() +
-                        " --cluster-init-port=" + getWebPort() +
-                        " --cluster-init-ramsize=" + getClusterInitRamSize())
+                getCouchbaseHostnameAndPort() +
+                " --cluster-init-username=" + getUsername() +
+                " --cluster-init-password=" + getPassword() +
+                " --cluster-init-port=" + getWebPort() +
+                " --cluster-init-ramsize=" + getClusterInitRamSize())
                 .execute();
     }
 
