@@ -93,7 +93,7 @@ public class CouchbaseNodeSshDriver extends AbstractSoftwareProcessSshDriver imp
     }
     
     @Override
-    public void initializeForCluster() {
+    public void initializeCluster() {
         if (clusterInitCalled.getAndSet(true)) {
             // Prevents duplicate call to cluster-init during cluster initalization
             // once initialization is complete, the SERVER_INITIALIZED attribute will be set

@@ -60,10 +60,11 @@ public interface CouchbaseNode extends SoftwareProcess {
             + "and can be initialized and added to a cluster, but is not necessarily available for client use (i.e. it has not "
             + "yet been initialized with cluster-init and/or it has not been added to a cluster)");
     
-    AttributeSensor<Boolean> SERVER_INITIALIZED = Sensors.newBooleanSensor("couchbase.server.initialized", "Indicates that the node is running, "
+    AttributeSensor<Boolean> CLUSTER_INITIALIZED = Sensors.newBooleanSensor("couchbase.server.initialized", "Indicates that the node is running, "
             + "and has been initialized with cluster-init, but is not necessarily available for client use (i.e. it has not "
             + "yet been added to a cluster)");
 
+    public static final MethodEffector<Void> INITIALIZE_CLUSTER = new MethodEffector<Void>(CouchbaseNode.class, "initializeCluster");
     public static final MethodEffector<Void> SERVER_ADD = new MethodEffector<Void>(CouchbaseNode.class, "serverAdd");
     public static final MethodEffector<Void> REBALANCE = new MethodEffector<Void>(CouchbaseNode.class, "rebalance");
 
@@ -72,6 +73,8 @@ public interface CouchbaseNode extends SoftwareProcess {
 
     @Effector(description = "rebalance the couchbase cluster")
     public void rebalance();
+
+    public void initializeCluster();
 
 
 }

@@ -46,11 +46,14 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
         subscribe(this, HTTP_SERVER_RUNNING, new SensorEventListener<Boolean>() {
             @Override
             public void onEvent(SensorEvent<Boolean> booleanSensorEvent) {
-                if (Boolean.TRUE.equals(booleanSensorEvent.getValue()) && !getAttribute(SERVER_INITIALIZED)) {
+                if (Boolean.TRUE.equals(booleanSensorEvent.getValue()) && !getAttribute(CLUSTER_INITIALIZED)) {
                     String hostname = getAttribute(HOSTNAME);
                     String webPort = getConfig(CouchbaseNode.COUCHBASE_WEB_ADMIN_PORT).iterator().next().toString();
                     setAttribute(CouchbaseNode.COUCHBASE_WEB_ADMIN_URL, format("http://%s:%s", hostname, webPort));
-                    getDriver().initializeForCluster();
+                    if (!getConfig(REQUIRES_CLUSTER)) {
+                        // If it's not going to be a in a 'real' cluster, make it a standalone cluster 
+                        getDriver().initializeCluster();
+                    }
                 }
             }
         });
@@ -109,7 +112,7 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
                 .period(1000)
                 .baseUri(managementUri + "/pools/nodes")
                 .credentials(getConfig(COUCHBASE_ADMIN_USERNAME), getConfig(COUCHBASE_ADMIN_PASSWORD))
-                .poll(new HttpPollConfig<Boolean>(SERVER_INITIALIZED)
+                .poll(new HttpPollConfig<Boolean>(CLUSTER_INITIALIZED)
                         .onSuccess(HttpValueFunctions.responseCodeEquals(200))
                         .onFailureOrException(Functions.constant(false)))
                 .build();
@@ -124,7 +127,7 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
         } else {
             addEnricher(
                 Enrichers.builder()
-                    .propagating(ImmutableMap.of(SERVER_INITIALIZED, SERVICE_UP))
+                    .propagating(ImmutableMap.of(CLUSTER_INITIALIZED, SERVICE_UP))
                     .build()
             );
         }
@@ -149,5 +152,10 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
         if (httpServiceUpFeed != null) {
             httpServiceUpFeed.stop();
         }
+    }
+
+    @Override
+    public void initializeCluster() {
+        getDriver().initializeCluster();
     }
 }

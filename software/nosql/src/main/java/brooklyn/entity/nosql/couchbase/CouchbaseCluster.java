@@ -32,7 +32,7 @@ public interface CouchbaseCluster extends DynamicCluster {
     AttributeSensor<List<String>> COUCHBASE_CLUSTER_BUCKETS = Sensors.newSensor(new TypeToken<List<String>>() {}, 
             "couchbase.cluster.buckets", "Names of all the buckets the couchbase cluster");
 
-    AttributeSensor<Entity> COUCHBASE_PRIMARY_NODE = Sensors.newSensor(Entity.class, "couchbase.cluster.primaryNode", "The primary couchbase node to query and issue add-server and rebalance on");
+    AttributeSensor<CouchbaseNode> COUCHBASE_PRIMARY_NODE = Sensors.newSensor(CouchbaseNode.class, "couchbase.cluster.primaryNode", "The primary couchbase node to query and issue add-server and rebalance on");
 
     AttributeSensor<Boolean> IS_CLUSTER_INITIALIZED = Sensors.newBooleanSensor("couchbase.cluster.isClusterInitialized", "flag to emit if the couchbase cluster was intialized");
 
