@@ -66,10 +66,14 @@ public interface CouchbaseNode extends SoftwareProcess {
 
     public static final MethodEffector<Void> INITIALIZE_CLUSTER = new MethodEffector<Void>(CouchbaseNode.class, "initializeCluster");
     public static final MethodEffector<Void> SERVER_ADD = new MethodEffector<Void>(CouchbaseNode.class, "serverAdd");
+    public static final MethodEffector<Void> SERVER_REMOVE = new MethodEffector<Void>(CouchbaseNode.class, "serverRemove");
     public static final MethodEffector<Void> REBALANCE = new MethodEffector<Void>(CouchbaseNode.class, "rebalance");
 
     @Effector(description = "add a server to a cluster")
     public void serverAdd(@EffectorParam(name = "serverHostname") String serverToAdd, @EffectorParam(name = "username") String username, @EffectorParam(name = "password") String password);
+    
+    @Effector(description = "removes a server from a cluster")
+    public void serverRemove(@EffectorParam(name = "server-remove") String serverToRemove);
 
     @Effector(description = "rebalance the couchbase cluster")
     public void rebalance();

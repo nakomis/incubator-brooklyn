@@ -34,7 +34,7 @@ import com.google.common.collect.Sets;
 
 public class CouchbaseClusterImpl extends DynamicClusterImpl implements CouchbaseCluster {
     private static final Logger LOG = LoggerFactory.getLogger(CouchbaseClusterImpl.class);
-    private final Object mutex = new Object[0];
+    private final Object couchbaseMutex = new Object[0];
 
     public void init() {
         super.init();
@@ -95,7 +95,7 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
     }
 
     protected synchronized void onServerPoolMemberChanged(Entity member) {
-        synchronized (mutex) {
+        synchronized (couchbaseMutex) {
             Collection<Entity> members = ImmutableSet.copyOf(this.getMembers());
             final CouchbaseNode primaryNode = getPrimaryNode();
             if (primaryNode == null) {
@@ -106,21 +106,23 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
                 });
                 if (runningNode.isPresent()) {
                     CouchbaseNode newPrimary = (CouchbaseNode)runningNode.get();
+                    LOG.debug("--=------------------------------------------ debug primary");
+                    LOG.info("primary node node set, choosing {} as primary", newPrimary);
                     setPrimaryNode(newPrimary);
                     Entities.invokeEffector(this, runningNode.get(), CouchbaseNode.INITIALIZE_CLUSTER);
                     return; // Will need to wait until the cluster is initialized
                 } else {
+                    LOG.debug("primary node not set, and no suitable candidates available, defering choice");
                     // There are no suitable candidates for primary node, so bail out and wait for one to become available
                     return;
                 }
-            } 
-            else if (!primaryNode.getAttribute(CouchbaseNode.CLUSTER_INITIALIZED)) {
+            } else if (!primaryNode.getAttribute(CouchbaseNode.CLUSTER_INITIALIZED)) {
+                LOG.debug("primary node set, cluster not yet initialized, deferrring cluster operations");
                 return; // Primary has been selected, but has not yet been initialized
                 // TODO: If primary is not running, demote and choose different primary
             } else {
-                // Primary node has been selected, and is initialized
+                // Primary node has been selected, and cluster is initialized
                 // TODO: If primary is not running, demote and choose different primary
-                // Find nodes that are HTTP_SERVER_RUNNING, but not in upNodes
                 getUpNodes().add(primaryNode);
                 
                 Iterable<CouchbaseNode> nodeMembers = Iterables.transform(getMembers(), new Function<Entity, CouchbaseNode>() {
@@ -128,25 +130,34 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
                         return (CouchbaseNode)entity;
                     }
                 });
-                Set<CouchbaseNode> nodesToAdd = ImmutableSet.copyOf(Iterables.filter(nodeMembers, new Predicate<Entity>() {
-                    @Override public boolean apply(Entity input) {
-                        return input instanceof CouchbaseNode && !getUpNodes().contains(input) && input.getAttribute(CouchbaseNode.HTTP_SERVER_RUNNING);
+                Set<CouchbaseNode> nodesToAdd = ImmutableSet.copyOf(Iterables.filter(nodeMembers, new Predicate<CouchbaseNode>() {
+                    @Override public boolean apply(CouchbaseNode input) {
+                        return !getUpNodes().contains(input) && input.getAttribute(CouchbaseNode.HTTP_SERVER_RUNNING);
                     }
                 }));
-                for (CouchbaseNode node : nodesToAdd) {
-                    addServer(node);
+                
+                Set<CouchbaseNode> nodesToRemove = ImmutableSet.copyOf(Iterables.filter(getUpNodes(), new Predicate<CouchbaseNode>() {
+                    @Override public boolean apply(CouchbaseNode input) {
+                        return !(getMembers().contains(input)) || ((getMembers().contains(input)) && !input.getAttribute(CouchbaseNode.HTTP_SERVER_RUNNING));
+                    }
+                }));
+                
+                if (nodesToAdd.size() > 0) {
+                    addServers(nodesToAdd);
+                }
+                if (nodesToRemove.size() > 0) {
+                    removeServers(nodesToRemove);
                 }
                 
-                // Find nodes that are in upNodes, but not HTTP_SERVER_RUNNING
-                if (nodesToAdd.size() > 0) { // TODO: or nodesToRemove.size() > 0
+                // Removing nodes automatically triggers a re-balance
+                if (nodesToAdd.size() > 0 && nodesToRemove.size() == 0) {
                     Entities.invokeEffector(this, primaryNode, CouchbaseNode.REBALANCE);
                 }
                 
-                // FIXME: TODO: remove any nodes that have failed
             }
         }
     }
-
+    
     protected boolean belongsInServerPool(Entity member) {
         if (!groovyTruth(member.getAttribute(Startable.SERVICE_UP))) {
             if (LOG.isTraceEnabled()) LOG.trace("Members of {}, checking {}, eliminating because not up", this, member);
@@ -216,15 +227,10 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
     }
 
     protected void addServers(Set<CouchbaseNode> serversToAdd) {
-        //FIXME: disambiguate between method names to differentiate between the stage phase and commit phase.
-        LOG.info("adding the SERVICE_UP couchbase nodes to the cluster..");
+        LOG.info("adding couchbase nodes to the cluster: {}", serversToAdd);
 
-        if (!serversToAdd.isEmpty()) {
-            for (CouchbaseNode e : serversToAdd) {
-                addServer(e);
-            }
-        } else {
-            LOG.warn("no servers to be added on the cluster: {}", this);
+        for (CouchbaseNode e : serversToAdd) {
+            addServer(e);
         }
     }
 
@@ -241,6 +247,22 @@ public class CouchbaseClusterImpl extends DynamicClusterImpl implements Couchbas
         }
     }
 
+    private void removeServers(Set<CouchbaseNode> nodesToRemove) {
+        LOG.info("removing couchbase nodes from the cluster: {}", nodesToRemove);
+        for (CouchbaseNode node : nodesToRemove) {
+            removeServer(node);
+        }
+    }
+    
+    private void removeServer(CouchbaseNode node) {
+        String hostname = node.getAttribute(Attributes.HOSTNAME) + ":" + node.getConfig(CouchbaseNode.COUCHBASE_WEB_ADMIN_PORT).iterator().next();
+        String username = node.getConfig(CouchbaseNode.COUCHBASE_ADMIN_USERNAME);
+        String password = node.getConfig(CouchbaseNode.COUCHBASE_ADMIN_PASSWORD);
+
+        Entities.invokeEffectorWithArgs(this, getPrimaryNode(), CouchbaseNode.SERVER_ADD, hostname, username, password);
+        ((EntityInternal) node).setAttribute(CouchbaseNode.IS_IN_CLUSTER, true);
+    }
+    
     public boolean isClusterInitialized() {
         return Optional.fromNullable(getAttribute(IS_CLUSTER_INITIALIZED)).or(false);
     }

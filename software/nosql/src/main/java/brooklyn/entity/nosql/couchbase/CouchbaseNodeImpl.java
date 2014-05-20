@@ -84,6 +84,11 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
     public void serverAdd(String serverToAdd, String username, String password) {
         getDriver().serverAdd(serverToAdd, username, password);
     }
+    
+    @Override
+    public void serverRemove(String serverToRemove) {
+        getDriver().serverRemove(serverToRemove);
+    }
 
     @Override
     public void rebalance() {
@@ -158,4 +163,5 @@ public class CouchbaseNodeImpl extends SoftwareProcessImpl implements CouchbaseN
     public void initializeCluster() {
         getDriver().initializeCluster();
     }
+
 }

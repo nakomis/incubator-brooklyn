@@ -190,6 +190,14 @@ public class CouchbaseNodeSshDriver extends AbstractSoftwareProcessSshDriver imp
                 .failOnNonZeroResultCode()
                 .execute();
     }
+    
+    public void serverRemove(String serverToRemove) {
+        newScript("serverRemove").body.append(couchbaseCli("rebalance")
+            + getCouchbaseHostnameAndCredentials()
+            + " -server-remove=" + serverToRemove)
+            .failOnNonZeroResultCode()
+            .execute();
+    }
 
     public void serverAddAndRebalance(String serverToAdd, String username, String password) {
         newScript("serverAddAndRebalance").body.append(couchbaseCli("rebalance")

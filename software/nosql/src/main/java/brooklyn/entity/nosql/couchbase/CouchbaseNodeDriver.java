@@ -8,6 +8,8 @@ public interface CouchbaseNodeDriver extends SoftwareProcessDriver {
     public void initializeCluster();
     
     public void serverAdd(String serverToAdd, String username, String password);
+    
+    public void serverRemove(String serverToRemove);
 
     public void rebalance();
 
