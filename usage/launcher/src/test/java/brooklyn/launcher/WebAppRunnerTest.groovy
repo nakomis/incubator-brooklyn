@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.Test
 
+import brooklyn.BrooklynVersion;
 import brooklyn.config.BrooklynProperties
 import brooklyn.entity.basic.Entities
 import brooklyn.management.internal.LocalManagementContext
@@ -26,6 +27,8 @@ public class WebAppRunnerTest {
     static { TimeExtras.init() }
 
     public static final Logger log = LoggerFactory.getLogger(WebAppRunnerTest.class);
+    
+    public static final String WAR_PATH = "classpath://brooklyn-example-hello-world-webapp.war";
             
     private static Duration TIMEOUT_MS;
     static { TIMEOUT_MS = Duration.THIRTY_SECONDS; }
@@ -86,7 +89,7 @@ public class WebAppRunnerTest {
     public void testStartSecondaryWar() {
         if (!Networking.isPortAvailable(8090))
             fail("Another process is using port 8090 which is required for this test.");
-        BrooklynWebServer server = createWebServer(port:8090, war:"brooklyn.war", wars:["hello":"hello-world.war"]);
+        BrooklynWebServer server = createWebServer(port:8090, war:"brooklyn.war", wars:["hello":WAR_PATH]);
         assertNotNull(server);
         
         try {
@@ -110,7 +113,7 @@ public class WebAppRunnerTest {
         
         try {
             server.start();
-            server.deploy("/hello", "hello-world.war");
+            server.deploy("/hello", WAR_PATH);
 
             assertBrooklynEventuallyAt("http://localhost:8090/");
             HttpTestUtils.assertContentEventuallyContainsText("http://localhost:8090/hello",
@@ -125,12 +128,12 @@ public class WebAppRunnerTest {
     public void testStartWithLauncher() {
         BrooklynLauncher launcher = BrooklynLauncher.newInstance()
                 .brooklynProperties("brooklyn.webconsole.security.provider",'brooklyn.rest.security.provider.AnyoneSecurityProvider')
-                .webapp("/hello", "hello-world.war")
+                .webapp("/hello", WAR_PATH)
                 .start();
         BrooklynServerDetails details = launcher.getServerDetails();
         
         try {
-            details.getWebServer().deploy("/hello2", "hello-world.war");
+            details.getWebServer().deploy("/hello2", WAR_PATH);
 
             assertBrooklynEventuallyAt(details.getWebServerUrl());
             HttpTestUtils.assertContentEventuallyContainsText(details.getWebServerUrl()+"hello", "This is the home page for a sample application");

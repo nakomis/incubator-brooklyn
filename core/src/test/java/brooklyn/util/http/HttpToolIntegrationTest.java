@@ -44,7 +44,7 @@ public class HttpToolIntegrationTest {
     
     @Test(groups = {"Integration"})
     public void testHttpRedirect() throws Exception {
-        URI baseUri = new URI(httpService.getUrl() + "hello/redirectAbsolute");
+        URI baseUri = new URI(httpService.getUrl() + "redirectAbsolute.html");
 
         HttpClient client = HttpTool.httpClientBuilder().laxRedirect(true).build();
         HttpToolResponse result = HttpTool.httpGet(client, baseUri, ImmutableMap.<String,String>of());

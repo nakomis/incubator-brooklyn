@@ -42,7 +42,7 @@ public class HttpService {
 
     private static final Logger log = LoggerFactory.getLogger(HttpService.class);
 
-    public static final String ROOT_WAR_URL = "classpath://hello-world.war";
+    public static final String ROOT_WAR_URL = "classpath://brooklyn-example-hello-world-webapp.war";
     public static final String SERVER_KEYSTORE = "classpath://server.ks";
     
     private final boolean httpsEnabled;
@@ -140,6 +140,7 @@ public class HttpService {
             
         } catch (Exception e) {
             try {
+                log.info("Failed to start test HttpService:"+e);
                 shutdown();
             } catch (Exception e2) {
                 log.warn("Error shutting down HttpService while recovering from earlier error (re-throwing earlier error)", e2);

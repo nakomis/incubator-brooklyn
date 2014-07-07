@@ -48,6 +48,8 @@ public class ControlledDynamicWebAppClusterTest {
 
     private static final int TIMEOUT_MS = 10*1000;
     
+    private static final String WAR_NAME = "brooklyn-example-hello-world-webapp.war";
+    
     private URL warUrl;
     private TestApplication app;
     private LocalhostMachineProvisioningLocation loc;
@@ -55,7 +57,7 @@ public class ControlledDynamicWebAppClusterTest {
     
     @BeforeMethod(alwaysRun=true)
     public void setUp() throws Exception {
-        String warPath = "hello-world.war";
+        String warPath = WAR_NAME;
         warUrl = getClass().getClassLoader().getResource(warPath);
         
         app = ApplicationBuilder.newManagedApp(TestApplication.class);
@@ -198,9 +200,9 @@ public class ControlledDynamicWebAppClusterTest {
     public void testTomcatAbsoluteRedirect() {
         final ControlledDynamicWebAppCluster cluster = app.createAndManageChild(EntitySpec.create(ControlledDynamicWebAppCluster.class)
             .configure(ControlledDynamicWebAppCluster.MEMBER_SPEC, EntitySpec.create(TomcatServer.class)
-                    .configure(TomcatServer.ROOT_WAR, "classpath://hello-world.war"))
+                    .configure(TomcatServer.ROOT_WAR, "classpath://" + WAR_NAME))
             .configure("initialSize", 1)
-            .configure(AbstractController.SERVICE_UP_URL_PATH, "hello/redirectAbsolute")
+            .configure(AbstractController.SERVICE_UP_URL_PATH, "redirectAbsolute")
         );
         app.start(locs);
 

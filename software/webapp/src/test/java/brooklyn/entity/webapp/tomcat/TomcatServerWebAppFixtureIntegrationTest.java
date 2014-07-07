@@ -54,7 +54,7 @@ public class TomcatServerWebAppFixtureIntegrationTest extends AbstractWebAppFixt
         for (Object[] entity : basicEntities()) {
             result.add(new Object[] {
                     entity[0],
-                    "hello-world.war",
+                    "brooklyn-example-hello-world-webapp.war",
                     "hello-world/",
                     "" // no sub-page path
                     });
@@ -65,7 +65,7 @@ public class TomcatServerWebAppFixtureIntegrationTest extends AbstractWebAppFixt
                 .configure(TomcatServer.HTTP_PORT, PortRanges.fromString(DEFAULT_HTTP_PORT)));
         result.add(new Object[] {
                 tomcat,
-                "swf-booking-mvc.war",
+                "brooklyn-example-hello-world-sql-webapp.war",
                 "swf-booking-mvc/",
                 "spring/intro",
                });

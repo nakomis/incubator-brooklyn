@@ -174,6 +174,31 @@
                     <generateReports>false</generateReports>
                 </configuration>
             </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-dependency-plugin</artifactId>
+              <version>2.8</version>
+              <executions>
+                <execution>
+                  <id>copy-example-war</id>
+                  <phase>process-test-resources</phase>
+                  <goals>
+                    <goal>copy</goal>
+                  </goals>
+                  <configuration>
+                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                    <artifactItems>
+                      <artifactItem>
+                        <groupId>io.brooklyn.example</groupId>
+                        <artifactId>brooklyn-example-hello-world-webapp</artifactId>
+                        <version>${brooklyn.version}</version>
+                        <type>war</type>
+                      </artifactItem>
+                    </artifactItems>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

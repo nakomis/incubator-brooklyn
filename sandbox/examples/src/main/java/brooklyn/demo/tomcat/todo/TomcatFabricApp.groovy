@@ -37,7 +37,7 @@ class TomcatFabricApp extends AbstractApplication {
 			initialSize : 2,
 			newEntity : webClusterFactory,
 			httpPort : 8080,  
-			war: sysProps.getFirst("brooklyn.example.war", defaultIfNone: "/tmp/swf-booking-mvc.war"),           // TODO use classpath
+			war: sysProps.getFirst("brooklyn.example.war", defaultIfNone: "classpath://brooklyn-example-hello-world-webapp.war"),           // TODO use classpath
         )
 	
     public static void main(String[] argv) {

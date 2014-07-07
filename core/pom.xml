@@ -22,7 +22,6 @@
             <artifactId>brooklyn-test-support</artifactId>
             <scope>test</scope>
         </dependency>
-    
         <dependency>
             <groupId>io.brooklyn</groupId>
             <artifactId>brooklyn-api</artifactId>
@@ -166,7 +165,33 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
+    </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.8</version>
+        <executions>
+            <execution>
+                <id>copy-example-war</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                    <goal>copy</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                    <artifactItems>
+                        <artifactItem>
+                            <groupId>io.brooklyn.example</groupId>
+                            <artifactId>brooklyn-example-hello-world-webapp</artifactId>
+                            <version>${brooklyn.version}</version>
+                            <type>war</type>
+                            <destFileName>brooklyn-example-hello-world-webapp.war</destFileName>
+                        </artifactItem>
+                    </artifactItems>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
     </plugins>
   </build>
 

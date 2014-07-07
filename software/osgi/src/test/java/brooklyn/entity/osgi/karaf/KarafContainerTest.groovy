@@ -24,6 +24,8 @@ import brooklyn.util.text.Identifiers
 
 public class KarafContainerTest {
     static { TimeExtras.init() }
+    
+    public static final String WAR_NAME = "brooklyn-example-hello-world-webapp.war";
 
     MachineProvisioningLocation localhost;
     TestApplication app
@@ -120,7 +122,7 @@ public class KarafContainerTest {
         
         app.start([ localhost ]);
         
-        URL jarUrl = getClass().getClassLoader().getResource("hello-world.jar");
+        URL jarUrl = getClass().getClassLoader().getResource(WAR_NAME);
         assertNotNull(jarUrl);
         
         long bundleId = karaf.installBundle("wrap:"+jarUrl.toString());

@@ -18,11 +18,9 @@ import brooklyn.entity.webapp.WebAppService
 import brooklyn.entity.webapp.jboss.JBoss7Server
 import brooklyn.location.Location
 import brooklyn.location.MachineLocation
-import brooklyn.management.ManagementContext
+import brooklyn.test.Asserts
 import brooklyn.test.HttpTestUtils
 import brooklyn.test.entity.TestApplication
-
-import com.google.common.collect.ImmutableMap
 
 /**
  * Test Nginx proxying a cluster of JBoss7Server entities on AWS for ENGR-1689.
@@ -40,12 +38,8 @@ public class NginxWebClusterEc2LiveTest {
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() {
-        ManagementContext managementContext = Entities.newManagementContext(
-                ImmutableMap.of("brooklyn.location.jclouds.aws-ec2.image-id", "us-east-1/ami-2342a94a"));
-        
-        loc = managementContext.getLocationRegistry().resolve("aws-ec2:us-east-1")
         app = ApplicationBuilder.newManagedApp(TestApplication.class);
-        Entities.startManagement(app, managementContext)
+        loc = app.managementContext.getLocationRegistry().resolve("aws-ec2:us-east-1")
     }
 
     @AfterMethod(alwaysRun = true)
@@ -55,7 +49,7 @@ public class NginxWebClusterEc2LiveTest {
     
     @Test(groups = "Live")
     public void testProvisionAwsCluster() {
-        URL war = getClass().getClassLoader().getResource("swf-booking-mvc.war")
+        URL war = getClass().getClassLoader().getResource("brooklyn-example-hello-world-webapp.war")
         assertNotNull war, "Unable to locate resource $war"
         
         cluster = app.createAndManageChild(EntitySpec.create(DynamicCluster.class)
@@ -72,15 +66,15 @@ public class NginxWebClusterEc2LiveTest {
 
         app.start([ loc ])
         
-        executeUntilSucceeds {
+        Asserts.succeedsEventually {
             // Nginx URL is available
             MachineLocation machine = nginx.locations.find { true }
-            String url = "http://" + machine.address.hostName + ":" + nginx.getAttribute(NginxController.PROXY_HTTP_PORT) + "/swf-booking-mvc"
-            HttpTestUtils.assertHttpStatusCodeEquals(url, 200)
-
-            // Web-app URL is available
-            cluster.members.each {
-                HttpTestUtils.assertHttpStatusCodeEquals(it.getAttribute(JavaWebAppService.ROOT_URL) + "swf-booking-mvc", 200)
+            String url = "http://" + machine.address.hostName + ":" + nginx.getAttribute(NginxController.PROXY_HTTP_PORT)
+                    HttpTestUtils.assertHttpStatusCodeEquals(url, 200)
+            
+                    // Web-app URL is available
+                    cluster.members.each {
+                HttpTestUtils.assertHttpStatusCodeEquals(it.getAttribute(JavaWebAppService.ROOT_URL), 200)
             }
         }
 

@@ -53,12 +53,13 @@ public class NginxUrlMappingIntegrationTest {
     private EntityManager entityManager;
     
     private URL war;
-    private static String WAR_URL = "classpath://hello-world.war";
+    private static final String WAR_NAME = "brooklyn-example-hello-world-webapp.war";
+    private static String WAR_URL = "classpath://" + WAR_NAME;
     
     @BeforeMethod(alwaysRun=true)
     public void setup() {
-        war = getClass().getClassLoader().getResource("hello-world.war")
-        assertNotNull(war, "Unable to locate hello-world.war resource");
+        war = getClass().getClassLoader().getResource(WAR_NAME)
+        assertNotNull(war, "Unable to locate " + WAR_NAME + " resource");
         
         app = ApplicationBuilder.newManagedApp(TestApplication.class);
         urlMappingsGroup = app.createAndManageChild(EntitySpec.create(BasicGroup.class)

@@ -24,7 +24,7 @@ public class WebClusterApp extends AbstractApplication {
 
     static BrooklynProperties config = BrooklynProperties.Factory.newDefault();
 
-    public static final String WAR_PATH = "classpath://hello-world.war";
+    public static final String WAR_PATH = "classpath://brooklyn-example-hello-world-webapp.war";
 
     private static final long loadCyclePeriodMs = 2 * 60 * 1000L;
 
