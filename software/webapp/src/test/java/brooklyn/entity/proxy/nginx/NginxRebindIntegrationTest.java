@@ -65,7 +65,7 @@ public class NginxRebindIntegrationTest {
     
     @BeforeMethod(groups = "Integration")
     public void setUp() {
-        warUrl = getClass().getClassLoader().getResource("hello-world.war");
+        warUrl = getClass().getClassLoader().getResource("brooklyn-example-hello-world-webapp.war");
 
         mementoDir = Files.createTempDir();
         origManagementContext = RebindTestUtils.newPersistingManagementContext(mementoDir, classLoader);

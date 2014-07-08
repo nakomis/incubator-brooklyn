@@ -18,7 +18,7 @@ import static org.testng.Assert.assertNotNull;
  */
 public class Jboss7DockerLiveTest extends AbstractDockerLiveTest {
 
-   private URL warUrl = checkNotNull(getClass().getClassLoader().getResource("hello-world.war"));
+   private URL warUrl = checkNotNull(getClass().getClassLoader().getResource("brooklyn-example-hello-world-webapp.war"));
 
    @Override
    protected void doTest(Location loc) throws Exception {

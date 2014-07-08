@@ -36,7 +36,7 @@ public class NginxHttpsSslIntegrationTest {
     private NginxController nginx
     private DynamicCluster cluster
 
-    private static final String WAR_URL = "classpath://hello-world.war";
+    private static final String WAR_URL = "classpath://brooklyn-example-hello-world-webapp.war";
     private static final String CERTIFICATE_URL = "classpath://ssl/certs/localhost/server.crt";
     private static final String KEY_URL = "classpath://ssl/certs/localhost/server.key";
     

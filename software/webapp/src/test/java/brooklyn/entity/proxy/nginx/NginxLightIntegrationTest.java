@@ -2,7 +2,6 @@ package brooklyn.entity.proxy.nginx;
 
 import static org.testng.Assert.assertEquals;
 
-import java.net.URL;
 import java.util.Map;
 
 import org.testng.annotations.AfterMethod;
@@ -29,10 +28,6 @@ public class NginxLightIntegrationTest {
 
     private TestApplication app;
     private NginxController nginx;
-    private DynamicCluster cluster;
-
-    private URL war;
-    private static String WAR_URL = "classpath://hello-world.war";
     
     @BeforeMethod
     public void setup() {

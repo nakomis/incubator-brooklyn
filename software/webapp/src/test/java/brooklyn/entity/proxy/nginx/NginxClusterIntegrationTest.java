@@ -9,8 +9,6 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -42,7 +40,6 @@ import com.google.common.collect.Lists;
  * Test the operation of the {@link NginxController} class.
  */
 public class NginxClusterIntegrationTest {
-    private static final Logger log = LoggerFactory.getLogger(NginxClusterIntegrationTest.class);
 
     private static final long TIMEOUT_MS = 60*1000;
     
@@ -58,7 +55,8 @@ public class NginxClusterIntegrationTest {
     
     @BeforeMethod(groups = "Integration")
     public void setup() throws Exception {
-        war = checkNotNull(getClass().getClassLoader().getResource("hello-world.war"), "hello-world.war not on classpath");
+        war = checkNotNull(getClass().getClassLoader().getResource("brooklyn-example-hello-world-webapp.war"), 
+                "brooklyn-example-hello-world-webapp.war not on classpath");
         localhostProvisioningLoc = new LocalhostMachineProvisioningLocation(MutableMap.of("address", "localhost"));
         
         app = ApplicationBuilder.newManagedApp(TestApplication.class);

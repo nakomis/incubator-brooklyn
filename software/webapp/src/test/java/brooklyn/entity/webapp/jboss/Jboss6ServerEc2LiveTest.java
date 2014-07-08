@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList;
  */
 public class Jboss6ServerEc2LiveTest extends AbstractEc2LiveTest {
     
-    private URL warUrl = checkNotNull(getClass().getClassLoader().getResource("hello-world.war"));
+    private URL warUrl = checkNotNull(getClass().getClassLoader().getResource("brooklyn-example-hello-world-webapp.war"));
     
     @Override
     protected void doTest(Location loc) throws Exception {

@@ -32,7 +32,7 @@ import brooklyn.util.time.Time;
 public class NginxIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(NginxIntegrationTest.class)
 
-    static final String HELLO_WAR_URL = "classpath://hello-world.war";
+    static final String HELLO_WAR_URL = "classpath://brooklyn-example-hello-world-webapp.war";
     static { TimeExtras.init() }
 
     private TestApplication app

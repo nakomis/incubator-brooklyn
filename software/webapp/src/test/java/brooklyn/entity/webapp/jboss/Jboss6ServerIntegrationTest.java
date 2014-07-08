@@ -34,7 +34,7 @@ public class Jboss6ServerIntegrationTest {
     
     @BeforeMethod(alwaysRun=true)
     public void setUp() throws Exception {
-        String warPath = "hello-world.war";
+        String warPath = "brooklyn-example-hello-world-webapp.war";
         warUrl = getClass().getClassLoader().getResource(warPath);
 
         localhostProvisioningLocation = new LocalhostMachineProvisioningLocation();

@@ -44,7 +44,7 @@ public class Jboss7ServerRebindIntegrationTest extends RebindTestFixtureWithApp 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-    	String warPath = "hello-world.war";
+    	String warPath = "brooklyn-example-hello-world-webapp.war";
         warUrl = getClass().getClassLoader().getResource(warPath);
         executor = Executors.newCachedThreadPool();
         localhostProvisioningLocation = (LocalhostMachineProvisioningLocation) origManagementContext.getLocationRegistry().resolve("localhost");
