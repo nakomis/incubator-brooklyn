@@ -56,7 +56,18 @@ a {
 </tr>
 <tr>
 <td>
-Existing users should use the replacement service at: <a href="http://www.agrinowcloud.com">http://www.agrinowcloud.com</a>
+Existing users should use the replacement service at: <a href="http://www.agrinowcloud.com<%
+Object requestUri = request.getAttribute("javax.servlet.forward.request_uri"); 
+if (requestUri != null) {
+out.println(requestUri);
+};
+%>">
+http://www.agrinowcloud.com<%
+
+if (requestUri != null) {
+out.println(requestUri);
+}
+%></a>
 <p>
 Please update any bookmarks to reflect the new address
 <p>
