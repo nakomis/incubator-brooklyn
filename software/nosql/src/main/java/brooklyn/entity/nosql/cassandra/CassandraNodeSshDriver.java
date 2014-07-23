@@ -64,7 +64,6 @@ import brooklyn.util.time.Time;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
 /**
  * Start a {@link CassandraNode} in a {@link Location} accessible over ssh.
@@ -121,12 +120,14 @@ public class CassandraNodeSshDriver extends JavaSoftwareProcessSshDriver impleme
         DownloadResolver resolver = Entities.newDownloader(this);
         List<String> urls = resolver.getTargets();
         String saveAs = resolver.getFilename();
-        setExpandedInstallDir(getInstallDir()+"/"+resolver.getUnpackedDirectoryName(getDefaultUnpackedDirectoryName()));
+        String expandedInstallDir = getInstallDir()+"/"+resolver.getUnpackedDirectoryName(getDefaultUnpackedDirectoryName()); 
+        setExpandedInstallDir(expandedInstallDir);
 
         List<String> commands = ImmutableList.<String>builder()
                 .addAll(BashCommands.commandsToDownloadUrlsAs(urls, saveAs))
                 .add(BashCommands.INSTALL_TAR)
-                .add("tar xzfv " + saveAs)
+                .add("mkdir -p " + expandedInstallDir)
+                .add("tar xzfv " + saveAs + " -C " + expandedInstallDir + " --strip-components=1")
                 .build();
 
         newScript(INSTALLING)
