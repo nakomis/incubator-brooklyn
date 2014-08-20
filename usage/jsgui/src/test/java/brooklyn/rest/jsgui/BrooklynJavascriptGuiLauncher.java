@@ -18,15 +18,22 @@
  */
 package brooklyn.rest.jsgui;
 
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.util.Set;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import brooklyn.catalog.Catalog;
+import brooklyn.config.ConfigKey;
 import brooklyn.rest.BrooklynRestApiLauncher;
 import brooklyn.util.net.Networking;
+
+import com.beust.jcommander.internal.Sets;
 
 /** launches Javascript GUI programmatically. and used for tests.
  * see {@link BrooklynRestApiLauncher} for more information.
@@ -48,7 +55,27 @@ public class BrooklynJavascriptGuiLauncher {
     
     public static void main(String[] args) throws Exception {
         startJavascriptAndRest();
+        Reflections reflections = new Reflections("brooklyn");
         
+//        for (Class<?> c : reflections.getSubTypesOf(Entity.class)) {
+//            System.out.println(c.getCanonicalName());
+//        }
+        for (Class<?> c : reflections.getTypesAnnotatedWith(Catalog.class)) {
+            System.out.println(c.getCanonicalName());
+            Set<Field> configKeys = Sets.newHashSet(); 
+            for (Field f : c.getFields()) {
+                if (f.getType().isAssignableFrom(ConfigKey.class)) {
+                    configKeys.add(f);
+                }
+            }
+            if (configKeys.size() > 0) {
+                System.out.println("\tConfig Keys:");
+                for (Field f : configKeys) {
+                    ConfigKey<?> key = (ConfigKey<?>) f.get(null);
+                    System.out.println("\t\t" + f.getName() + " - " + key.getName() + " (" + key.getDescription() + ")");
+                }
+            }
+        }
         log.info("Press Ctrl-C to quit.");
     }
     
