@@ -33,7 +33,7 @@ import brooklyn.config.ConfigKey;
 import brooklyn.rest.BrooklynRestApiLauncher;
 import brooklyn.util.net.Networking;
 
-import com.beust.jcommander.internal.Sets;
+import com.google.common.collect.Sets;
 
 /** launches Javascript GUI programmatically. and used for tests.
  * see {@link BrooklynRestApiLauncher} for more information.
