@@ -109,7 +109,10 @@ public class RiakNodeSshDriver extends AbstractSoftwareProcessSshDriver implemen
                 "export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                 "which apt-get",
                 "curl http://apt.basho.com/gpg/basho.apt.key | " + sudo("apt-key add -"),
-                sudo("bash -c \"echo deb http://apt.basho.com $(lsb_release -sc) main > /etc/apt/sources.list.d/basho.list\""),
+                // FIXME: download and unpack lsb_release from http://sourceforge.net/projects/lsb/files/lsb_release/1.4/lsb-release-1.4.tar.gz
+                // This should probably happen in the Dockerfile
+                // sudo("bash -c \"echo deb http://apt.basho.com $(lsb_release -sc) main > /etc/apt/sources.list.d/basho.list\""),
+                sudo("bash -c \"echo deb http://apt.basho.com precise main > /etc/apt/sources.list.d/basho.list\""),
                 sudo("apt-get update"),
                 sudo("apt-get -y --allow-unauthenticated install riak=" + getEntity().getConfig(RiakNode.SUGGESTED_VERSION) + "*"));
         String yum = chainGroup(
@@ -228,16 +231,17 @@ public class RiakNodeSshDriver extends AbstractSoftwareProcessSshDriver implemen
 
     @Override
     public boolean isRunning() {
-
+        // FIXME: Cannot rely on riak ping, doesn't work on Docker
+        // most likely will need to change `-name riak@${driver.hostname}` in app.config 
         ScriptHelper checkRunningScript = newScript(CHECK_RUNNING)
-                .body.append(format("%s ping", getRiakCmd()));
+                .body.append(format("%s chkconfig", getRiakCmd())).gatherOutput();
 
         if (!isRiakOnPath) {
             Map<String, String> newPathVariable = ImmutableMap.of("PATH", sbinPath);
             log.warn("riak command not found on PATH. Altering future commands' environment variables from {} to {}", getShellEnvironment(), newPathVariable);
             checkRunningScript.environmentVariablesReset(newPathVariable);
         }
-        return (checkRunningScript.execute() == 0);
+        return (checkRunningScript.execute() == 0 && checkRunningScript.getResultStdout().startsWith("config is OK"));
     }
 
     public String getRiakEtcDir() {
