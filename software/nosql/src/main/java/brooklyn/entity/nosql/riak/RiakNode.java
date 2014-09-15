@@ -96,6 +96,7 @@ public interface RiakNode extends SoftwareProcess {
     public static final MethodEffector<Void> JOIN_RIAK_CLUSTER = new MethodEffector<Void>(RiakNode.class, "joinCluster");
     public static final MethodEffector<Void> LEAVE_RIAK_CLUSTER = new MethodEffector<Void>(RiakNode.class, "leaveCluster");
     public static final MethodEffector<Void> COMMIT_RIAK_CLUSTER = new MethodEffector<Void>(RiakNode.class, "commitCluster");
+    public static final MethodEffector<String> RIAK_ADMIN_COMMAND = new MethodEffector<String>(RiakNode.class, "riakAdmin");
 
     // accessors, for use from template file
     Integer getRiakWebPort();
@@ -121,6 +122,10 @@ public interface RiakNode extends SoftwareProcess {
 
     @Effector(description = "commit changes made to a Riak cluster")
     public void commitCluster();
+    
+    @Effector(description = "runs riak-admin with the command specified. NOTE: Where specific commands are avaible through effectors "
+            + "(e.g. joinCluster) the action-specific effector should be used")
+    public void riakAdmin(@EffectorParam(name = "command", description = "admin command to be executed, e.g. 'ring-status'") String command);
 
     public boolean hasJoinedCluster();
 }

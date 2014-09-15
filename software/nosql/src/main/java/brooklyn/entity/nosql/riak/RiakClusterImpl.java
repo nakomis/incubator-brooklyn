@@ -69,14 +69,8 @@ public class RiakClusterImpl extends DynamicClusterImpl implements RiakCluster {
         Time.sleep(getConfig(DELAY_BEFORE_ADVERTISING_CLUSTER));
 
         //FIXME: add a quorum to tolerate failed nodes before setting on fire.
-        Optional<Entity> anyNode = Iterables.tryFind(getMembers(), new Predicate<Entity>() {
-
-            @Override
-            public boolean apply(@Nullable Entity entity) {
-                return (entity instanceof RiakNode && hasMemberJoinedCluster(entity) && entity.getAttribute(RiakNode.SERVICE_UP));
-            }
-        });
-
+        Optional<RiakNode> anyNode = getAnyUpNodeInCluster(); 
+        
         if (anyNode.isPresent()) {
             log.info("Planning and Committing cluster changes on node: {}, cluster: {}", anyNode.get().getId(), getId());
             Entities.invokeEffector(this, anyNode.get(), RiakNode.COMMIT_RIAK_CLUSTER);
@@ -222,4 +216,28 @@ public class RiakClusterImpl extends DynamicClusterImpl implements RiakCluster {
             ((RiakClusterImpl) super.entity).onServerPoolMemberChanged(entity);
         }
     }
+    
+    private Optional<RiakNode> getAnyUpNodeInCluster() {
+        Optional<Entity> entity = Iterables.tryFind(getMembers(), new Predicate<Entity>() {
+            @Override public boolean apply(@Nullable Entity entity) {
+                return (entity instanceof RiakNode && hasMemberJoinedCluster(entity) && entity.getAttribute(RiakNode.SERVICE_UP));
+            }
+        });
+        if (!entity.isPresent()) {
+            return Optional.absent();
+        } else {
+            return Optional.of((RiakNode)entity);
+        }
+    }
+
+    @Override
+    public void riakAdmin(String command) {
+        Optional<RiakNode> node = getAnyUpNodeInCluster();
+        if (!node.isPresent()) {
+            throw new IllegalStateException("No useable nodes found in cluster");
+        } else {
+            node.get().riakAdmin(command);
+        }
+    }
+
 }

@@ -23,7 +23,10 @@ import java.util.Map;
 import brooklyn.catalog.Catalog;
 import brooklyn.config.ConfigKey;
 import brooklyn.entity.Entity;
+import brooklyn.entity.annotation.Effector;
+import brooklyn.entity.annotation.EffectorParam;
 import brooklyn.entity.basic.ConfigKeys;
+import brooklyn.entity.basic.MethodEffector;
 import brooklyn.entity.group.DynamicCluster;
 import brooklyn.entity.proxying.ImplementedBy;
 import brooklyn.event.AttributeSensor;
@@ -49,4 +52,12 @@ public interface RiakCluster extends DynamicCluster {
     AttributeSensor<Boolean> IS_CLUSTER_INIT = Sensors.newBooleanSensor("riak.cluster.isClusterInit", "flag to determine if the cluster was already initialized");
     
     AttributeSensor<String> NODE_LIST = Sensors.newStringSensor("riak.cluster.nodeList", "List of nodes (including ports), comma separated");
+    
+    public static final MethodEffector<String> RIAK_ADMIN_COMMAND = new MethodEffector<String>(RiakNode.class, "riakAdmin");
+    
+
+    @Effector(description = "runs riak-admin with the command specified on an arbitrarily chosen member of the cluster. "
+            + "NOTE: Where specific commands are avaible through effectors "
+            + "(e.g. joinCluster) the action-specific effector should be used")
+    public void riakAdmin(@EffectorParam(name = "command", description = "admin command to be executed, e.g. 'ring-status'") String command);
 }

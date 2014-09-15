@@ -179,6 +179,11 @@ public class RiakNodeImpl extends SoftwareProcessImpl implements RiakNode {
     public boolean hasJoinedCluster() {
         return Boolean.TRUE.equals(getAttribute(RiakNode.RIAK_NODE_HAS_JOINED_CLUSTER));
     }
+    
+    @Override
+    public void riakAdmin(String command) {
+        getDriver().riakAdmin(command);
+    }
 
     @Override
     public void recoverFailedNode(String nodeName) {

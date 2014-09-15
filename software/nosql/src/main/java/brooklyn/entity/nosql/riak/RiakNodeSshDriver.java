@@ -374,6 +374,14 @@ public class RiakNodeSshDriver extends AbstractSoftwareProcessSshDriver implemen
             log.warn("entity {}: is not in the riak cluster", entity.getId());
         }
     }
+    
+    @Override
+    public void riakAdmin(String command) {
+        newScript("riakAdmin")
+            .body.append(sudo(getRiakAdminCmd() + " " + command))
+            .gatherOutput()
+            .execute();
+    }
 
     private String getVmArgsLocation() {
         return Urls.mergePaths(getRiakEtcDir(), "vm.args");
