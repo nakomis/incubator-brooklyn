@@ -405,4 +405,12 @@ public class RiakNodeSshDriver extends AbstractSoftwareProcessSshDriver implemen
         //TODO: check for non-package install.
         return isPackageInstall ? "/var/lib/riak/ring" : Urls.mergePaths(getExpandedInstallDir(), "lib/ring");
     }
+
+    @Override
+    public void deleteAllData() {
+        newScript("deleteAllData")
+            .body.append("rm -rf data")
+            .failOnNonZeroResultCode()
+            .execute();
+    }
 }
