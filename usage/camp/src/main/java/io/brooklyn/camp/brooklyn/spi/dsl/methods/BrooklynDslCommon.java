@@ -25,6 +25,7 @@ import io.brooklyn.camp.brooklyn.spi.dsl.methods.DslComponent.Scope;
 
 import java.util.Map;
 
+import brooklyn.entity.Effector;
 import brooklyn.entity.Entity;
 import brooklyn.entity.basic.EntityDynamicType;
 import brooklyn.event.Sensor;
@@ -95,6 +96,26 @@ public class BrooklynDslCommon {
             }
             if (sensor == null)
                 throw new IllegalArgumentException("Sensor " + sensorName + " not found on class " + clazzName);
+            return sensor;
+        } catch (ClassNotFoundException e) {
+            throw Exceptions.propagate(e);
+        }
+    }
+    
+    /** retuns an Effector from the given entity type */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static Object effector(String clazzName, String effectorName) {
+        try {
+            Class<?> clazz = Class.forName(clazzName);
+            Effector<?> sensor;
+            if (Entity.class.isAssignableFrom(clazz)) {
+                sensor = new EntityDynamicType((Class<? extends Entity>) clazz).getEffector(effectorName);
+            } else {
+                Map<String,Effector<?>> sensors = EntityDynamicType.findEffectors((Class)clazz, null);
+                sensor = sensors.get(effectorName);
+            }
+            if (sensor == null)
+                throw new IllegalArgumentException("Effector " + effectorName + " not found on class " + clazzName);
             return sensor;
         } catch (ClassNotFoundException e) {
             throw Exceptions.propagate(e);

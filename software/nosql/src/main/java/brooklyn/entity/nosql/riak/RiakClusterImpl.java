@@ -144,25 +144,7 @@ public class RiakClusterImpl extends DynamicClusterImpl implements RiakCluster {
                 }
             }
         } else {
-            if (nodes != null && nodes.containsKey(member)) {
-                final Entity memberToBeRemoved = member;
-
-                Optional<Entity> anyNodeInCluster = Iterables.tryFind(nodes.keySet(), new Predicate<Entity>() {
-
-                    @Override
-                    public boolean apply(@Nullable Entity node) {
-                        return (node instanceof RiakNode && hasMemberJoinedCluster(node) && !node.equals(memberToBeRemoved));
-                    }
-                });
-                if (anyNodeInCluster.isPresent()) {
-                    Entities.invokeEffectorWithArgs(this, anyNodeInCluster.get(), RiakNode.LEAVE_RIAK_CLUSTER, getRiakName(memberToBeRemoved));
-                }
-
-                nodes.remove(member);
-                setAttribute(RIAK_CLUSTER_NODES, nodes);
-                log.info("Removing riak node {}: {}; {} from cluster", new Object[]{this, member, getRiakName(member)});
-
-            }
+            removeNodeFromCluster((RiakNode)member, nodes);
         }
         
         ServiceNotUpLogic.updateNotUpIndicatorRequiringNonEmptyMap(this, RIAK_CLUSTER_NODES);
@@ -216,7 +198,7 @@ public class RiakClusterImpl extends DynamicClusterImpl implements RiakCluster {
             ((RiakClusterImpl) super.entity).onServerPoolMemberChanged(entity);
         }
     }
-    
+
     private Optional<RiakNode> getAnyUpNodeInCluster() {
         Optional<Entity> entity = Iterables.tryFind(getMembers(), new Predicate<Entity>() {
             @Override public boolean apply(@Nullable Entity entity) {
@@ -240,4 +222,55 @@ public class RiakClusterImpl extends DynamicClusterImpl implements RiakCluster {
         }
     }
 
+    @Override
+    public void deleteAllData() {
+        disbandCluster();
+        for (Entity entity : getMembers()) {
+            if (entity instanceof RiakNode) {
+                RiakNode node = (RiakNode)entity;
+                node.deleteAllData();
+            }
+        }
+        for (Entity entity : getMembers()) {
+            if (entity instanceof RiakNode) {
+                onServerPoolMemberChanged(entity);
+            }
+        }
+    }
+    
+    private void disbandCluster() {
+        Map<Entity, String> nodes = getAttribute(RIAK_CLUSTER_NODES);
+        if (nodes == null) {
+            nodes = Maps.newLinkedHashMap();
+        }
+        for (Entity member : getMembers()) {
+            if (member instanceof RiakNode) {
+                removeNodeFromCluster((RiakNode)member, nodes);
+            }
+        }
+        isFirstNodeSet.set(false);
+        setAttribute(RIAK_CLUSTER_NODES, nodes);
+    }
+    
+    private void removeNodeFromCluster(RiakNode member, Map<Entity, String> nodes) {
+        if (nodes != null && nodes.containsKey(member)) {
+            final Entity memberToBeRemoved = member;
+
+            Optional<Entity> anyNodeInCluster = Iterables.tryFind(nodes.keySet(), new Predicate<Entity>() {
+
+                @Override
+                public boolean apply(@Nullable Entity node) {
+                    return (node instanceof RiakNode && hasMemberJoinedCluster(node) && !node.equals(memberToBeRemoved));
+                }
+            });
+            if (anyNodeInCluster.isPresent()) {
+                Entities.invokeEffectorWithArgs(this, anyNodeInCluster.get(), RiakNode.LEAVE_RIAK_CLUSTER, getRiakName(memberToBeRemoved));
+            }
+
+            nodes.remove(member);
+            setAttribute(RIAK_CLUSTER_NODES, nodes);
+            log.info("Removing riak node {}: {}; {} from cluster", new Object[]{this, member, getRiakName(member)});
+
+        }
+    }
 }

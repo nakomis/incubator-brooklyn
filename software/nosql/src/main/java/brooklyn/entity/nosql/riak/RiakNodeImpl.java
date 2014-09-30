@@ -214,4 +214,13 @@ public class RiakNodeImpl extends SoftwareProcessImpl implements RiakNode {
         return getAttribute(RiakNode.ERLANG_PORT_RANGE_END);
     }
 
+    @Override
+    public void deleteAllData() {
+        disconnectSensors();
+        getDriver().stop();
+        getDriver().deleteAllData();
+        getDriver().start();
+        connectSensors();
+    }
+
 }

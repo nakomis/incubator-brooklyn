@@ -33,4 +33,7 @@ public interface RiakNodeDriver extends SoftwareProcessDriver {
     public void commitCluster();
 
     public void riakAdmin(String command);
+
+    public void deleteAllData();
+
 }

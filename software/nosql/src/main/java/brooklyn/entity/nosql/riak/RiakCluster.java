@@ -48,16 +48,18 @@ public interface RiakCluster extends DynamicCluster {
 
     @SetFromFlag("delayBeforeAdvertisingCluster")
     ConfigKey<Duration> DELAY_BEFORE_ADVERTISING_CLUSTER = ConfigKeys.newConfigKey(Duration.class, "riak.cluster.delayBeforeAdvertisingCluster", "Delay after cluster is started before checking and advertising its availability", Duration.seconds(2 * 60));
+    
+    @Effector(description = "resets the riak node by stopping it, deleting the data directory, then restarting it")
+    public void deleteAllData();
 
     AttributeSensor<Boolean> IS_CLUSTER_INIT = Sensors.newBooleanSensor("riak.cluster.isClusterInit", "flag to determine if the cluster was already initialized");
     
     AttributeSensor<String> NODE_LIST = Sensors.newStringSensor("riak.cluster.nodeList", "List of nodes (including ports), comma separated");
     
     public static final MethodEffector<String> RIAK_ADMIN_COMMAND = new MethodEffector<String>(RiakNode.class, "riakAdmin");
-    
 
     @Effector(description = "runs riak-admin with the command specified on an arbitrarily chosen member of the cluster. "
-            + "NOTE: Where specific commands are avaible through effectors "
+            + "NOTE: Where specific commands are available through effectors "
             + "(e.g. joinCluster) the action-specific effector should be used")
     public void riakAdmin(@EffectorParam(name = "command", description = "admin command to be executed, e.g. 'ring-status'") String command);
 }
