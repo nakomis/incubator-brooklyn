@@ -383,7 +383,7 @@ public abstract class AbstractWebAppFixtureIntegrationTest {
                         assertEquals(event.getSensor(), WebAppService.REQUESTS_PER_SECOND_IN_WINDOW);
                         assertEquals(event.getValue(), 0.0d);
                         if (eventTime > 0) assertTrue(event.getTimestamp()-eventTime < MAX_INTERVAL_BETWEEN_EVENTS,
-    						"events at "+eventTime+" and "+event.getTimestamp()+" exceeded maximum allowable interval "+MAX_INTERVAL_BETWEEN_EVENTS);
+                            "events at "+eventTime+" and "+event.getTimestamp()+" exceeded maximum allowable interval "+MAX_INTERVAL_BETWEEN_EVENTS);
                         eventTime = event.getTimestamp();
                     }
                 }});
@@ -421,7 +421,7 @@ public abstract class AbstractWebAppFixtureIntegrationTest {
      */
     @Test(groups = "Integration", dataProvider = "entitiesWithWarAndURL")
     public void initialRootWarDeployments(final SoftwareProcess entity, final String war, 
-			final String urlSubPathToWebApp, final String urlSubPathToPageToQuery) {
+            final String urlSubPathToWebApp, final String urlSubPathToPageToQuery) {
         this.entity = entity;
         log.info("test=initialRootWarDeployments; entity="+entity+"; app="+entity.getApplication());
         
@@ -431,7 +431,7 @@ public abstract class AbstractWebAppFixtureIntegrationTest {
         ((EntityLocal)entity).setConfig(JavaWebAppService.ROOT_WAR, resource.getPath());
         Entities.start(entity.getApplication(), ImmutableList.of(loc));
         
-		//tomcat may need a while to unpack everything
+        //tomcat may need a while to unpack everything
         Asserts.succeedsEventually(MutableMap.of("timeout", 60*1000), new Runnable() {
             public void run() {
                 // TODO get this URL from a WAR file entity
@@ -440,10 +440,10 @@ public abstract class AbstractWebAppFixtureIntegrationTest {
                 assertEquals(entity.getAttribute(JavaWebAppSoftwareProcess.DEPLOYED_WARS), ImmutableSet.of("/"));
             }});
     }
-	
+    
     @Test(groups = "Integration", dataProvider = "entitiesWithWarAndURL")
     public void initialNamedWarDeployments(final SoftwareProcess entity, final String war, 
-			final String urlSubPathToWebApp, final String urlSubPathToPageToQuery) {
+            final String urlSubPathToWebApp, final String urlSubPathToPageToQuery) {
         this.entity = entity;
         log.info("test=initialNamedWarDeployments; entity="+entity+"; app="+entity.getApplication());
         
@@ -459,7 +459,7 @@ public abstract class AbstractWebAppFixtureIntegrationTest {
                 HttpTestUtils.assertHttpStatusCodeEquals(entity.getAttribute(WebAppService.ROOT_URL)+urlSubPathToWebApp+urlSubPathToPageToQuery, 200);
             }});
     }
-	
+    
     @Test(groups = "Integration", dataProvider = "entitiesWithWarAndURL")
     public void testWarDeployAndUndeploy(final JavaWebAppSoftwareProcess entity, final String war, 
             final String urlSubPathToWebApp, final String urlSubPathToPageToQuery) {
@@ -489,7 +489,7 @@ public abstract class AbstractWebAppFixtureIntegrationTest {
                 assertEquals(entity.getAttribute(JavaWebAppSoftwareProcess.DEPLOYED_WARS), ImmutableSet.of());
             }});
     }
-    	
+        
     private void sleep(long millis) {
         if (millis > 0) Time.sleep(millis);
     }    
