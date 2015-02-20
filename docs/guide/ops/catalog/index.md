@@ -24,7 +24,7 @@ An item to be added to the catalog is defined in YAML. This follows the syntax o
 YAML blueprint with an addition `brooklyn.catalog` section giving 
 the metadata needed to register the blueprint in the catalog:
 
-{% highlight yaml %}
+``
 brooklyn.catalog:
   id: my-MySQL
   version: 1.0
@@ -36,7 +36,7 @@ brooklyn.catalog:
 
 services:
 - type: brooklyn.entity.database.mysql.MySqlNode
-{% endhighlight %}
+``
 
 To explain the `brooklyn.catalog` fields:
 
@@ -54,7 +54,7 @@ To explain the `brooklyn.catalog` fields:
 
 The `libraries` section references OSGi bundles required for the blueprint. It can be omitted if everything
 required by the blueprint is already on the Brooklyn classpath.
-These URL's should be to stable OSGi bundles;
+These URLs should be to stable OSGi bundles;
 if the contents at any of these URLs changes, the behaviour of the blueprint may change 
 whenever a bundle is reloaded in a Brooklyn server,
 and if entities have been deployed against that version, their behavior may change in subtle or potentially incompatible ways.
