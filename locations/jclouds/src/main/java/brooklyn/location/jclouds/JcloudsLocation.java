@@ -84,6 +84,7 @@ import org.jclouds.scriptbuilder.statements.login.AdminAccess;
 import org.jclouds.scriptbuilder.statements.login.ReplaceShadowPasswordEntry;
 import org.jclouds.scriptbuilder.statements.ssh.AuthorizeRSAPublicKeys;
 import org.jclouds.softlayer.compute.options.SoftLayerTemplateOptions;
+import org.jclouds.vcloud.director.v1_5.compute.options.VCloudDirectorTemplateOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,6 +117,7 @@ import com.google.common.reflect.TypeToken;
 import brooklyn.config.ConfigKey;
 import brooklyn.config.ConfigKey.HasConfigKey;
 import brooklyn.config.ConfigUtils;
+import brooklyn.entity.basic.ConfigKeys;
 import brooklyn.entity.basic.Sanitizer;
 import brooklyn.entity.rebind.persister.LocationWithObjectStore;
 import brooklyn.entity.rebind.persister.PersistenceObjectStore;
@@ -203,6 +205,9 @@ public class JcloudsLocation extends AbstractCloudMachineProvisioningLocation im
 
     private static final Pattern LIST_PATTERN = Pattern.compile("^\\[(.*)\\]$");
     private static final Pattern INTEGER_PATTERN = Pattern.compile("^\\d*$");
+
+    private static final ConfigKey<Boolean> WINDOWS = ConfigKeys.newBooleanConfigKey("windows",
+            "If set, overrides the setting derived from the VM template");
 
     private static boolean loggedSshKeysHint = false;
 
@@ -624,7 +629,7 @@ public class JcloudsLocation extends AbstractCloudMachineProvisioningLocation im
             if (node == null)
                 throw new IllegalStateException("No nodes returned by jclouds create-nodes in " + setup.getDescription());
 
-            boolean windows = node.getOperatingSystem().getFamily().equals(OsFamily.WINDOWS);
+            boolean windows = isWindows(setup, node.getOperatingSystem().getFamily());
 
             if (windows) {
                 // FIXME: Tidy this up and allow for user-specified credentials
@@ -1062,6 +1067,10 @@ public class JcloudsLocation extends AbstractCloudMachineProvisioningLocation im
                             // TODO avail in next jclouds thanks to @andreaturli
 //                          } else if (t instanceof SoftLayerTemplateOptions) {
 //                              ((SoftLayerTemplateOptions)t).userData(Strings.toString(v));
+                        } else if (t instanceof VCloudDirectorTemplateOptions) {
+                            if (v==null) return;
+                            String data = v.toString();
+                            ((VCloudDirectorTemplateOptions) t).guestCustomizationScript(data);
                         } else {
                             LOG.info("ignoring userDataString({}) in VM creation because not supported for cloud/type ({})", v, t.getClass());
                         }
@@ -1297,7 +1306,7 @@ public class JcloudsLocation extends AbstractCloudMachineProvisioningLocation im
         }
         TemplateOptions options = template.getOptions();
 
-        if (template.getImage().getOperatingSystem().getFamily().equals(OsFamily.WINDOWS)) {
+        if (isWindows(config, template.getImage().getOperatingSystem().getFamily())) {
             if (!(config.containsKey(JcloudsLocationConfig.USER_METADATA_STRING) || config.containsKey(JcloudsLocationConfig.USER_METADATA_MAP))) {
                 config.put(JcloudsLocationConfig.USER_METADATA_STRING, WinRmMachineLocation.getDefaultUserMetadataString());
             }
@@ -2420,6 +2429,15 @@ public class JcloudsLocation extends AbstractCloudMachineProvisioningLocation im
     @Override
     public PersistenceObjectStore newPersistenceObjectStore(String container) {
         return new JcloudsBlobStoreBasedObjectStore(this, container);
+    }
+
+    protected Boolean isWindows(ConfigBag config, OsFamily osFamily) {
+        Boolean override = config.get(WINDOWS);
+        if (override == null) {
+            return OsFamily.WINDOWS.equals(osFamily);
+        } else {
+            return override;
+        }
     }
 
 }
