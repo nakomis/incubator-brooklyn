@@ -29,6 +29,7 @@ import brooklyn.entity.database.DatastoreMixins.DatastoreCommon;
 import brooklyn.entity.effector.Effectors;
 import brooklyn.entity.proxying.ImplementedBy;
 import brooklyn.entity.trait.HasShortName;
+import brooklyn.event.basic.BasicAttributeSensorAndConfigKey;
 import brooklyn.event.basic.PortAttributeSensorAndConfigKey;
 import brooklyn.location.basic.PortRanges;
 import brooklyn.util.flags.SetFromFlag;
@@ -79,6 +80,20 @@ public interface PostgreSqlNode extends SoftwareProcess, HasShortName, Datastore
     @SetFromFlag("pollPeriod")
     ConfigKey<Long> POLL_PERIOD = ConfigKeys.newLongConfigKey(
             "postgresql.sensorpoll", "Poll period (in milliseconds)", 1000L);
+    
+    @SetFromFlag("username")
+    BasicAttributeSensorAndConfigKey<String> USERNAME = new BasicAttributeSensorAndConfigKey<String>(
+            String.class, "postgresql.username", "Username of the database user",
+            "postgresuser");
+    
+    @SetFromFlag("password")
+    BasicAttributeSensorAndConfigKey<String> PASSWORD = new BasicAttributeSensorAndConfigKey<String>(
+            String.class, "postgresql.password",
+            "Password for the database user, auto-generated if not set");
+
+    @SetFromFlag("database")
+    BasicAttributeSensorAndConfigKey<String> DATABASE = new BasicAttributeSensorAndConfigKey<String>(
+            String.class, "postgresql.database", "Database to be used", "db");
 
     Effector<String> EXECUTE_SCRIPT = Effectors.effector(DatastoreMixins.EXECUTE_SCRIPT)
             .description("Executes the given script contents using psql")
