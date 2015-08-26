@@ -389,6 +389,7 @@ public class BrooklynWebServer {
             connector.setHost(bindAddress.getHostName());
         }
         connector.setPort(actualPort);
+        connector.open();
         server.setConnectors(new Connector[]{connector});
 
         if (bindAddress == null || bindAddress.equals(InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }))) {
